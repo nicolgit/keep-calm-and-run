@@ -2,6 +2,7 @@ namespace kcar.interfaces
 {
     public interface IWriter
     {
-        void Write(string text);
+        public bool Initialize();
+        public string WriteActivity(Activity activity);
     }
 }

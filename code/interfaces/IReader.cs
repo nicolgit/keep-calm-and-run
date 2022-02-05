@@ -2,6 +2,9 @@
 {
     public interface IReader
     {
-        string Read();
+        public bool Initialize();
+        public string ReadActivities(DateTime before, DateTime after, int page, int pageSize);
+        public string ReadActivity(int id);
+        public int Count();
     }
 }

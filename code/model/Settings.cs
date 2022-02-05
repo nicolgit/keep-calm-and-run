@@ -21,5 +21,14 @@ namespace kcar.model
         }
 
         public string Sample { get; set; }
+        public Caledos Caledos { get; set; }
+    }
+
+    public class Caledos
+    {
+        public string DBConnectionString { get; set; }
+        public string TableStorageConnectionString { get; set; }
+        public string Username { get; set; }
+        public string Password { get; set; }
     }
 }
