@@ -27,7 +27,7 @@ namespace kcar.model
     public class Caledos
     {
         public string DBConnectionString { get; set; }
-        public string TableStorageConnectionString { get; set; }
+        public string TableStorageAccessKey { get; set; }
         public string Username { get; set; }
         public string Password { get; set; }
     }
