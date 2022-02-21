@@ -64,6 +64,7 @@ namespace kcar.interfaces.Reader
                             Log.Verbose($"Activity: {fitnessActivityId}");
                             Log.Verbose($"UserId: {userId}");
 
+                            // Get the activity data
                             var client = new TableClient(
                                 new Uri(STORAGE_URI),
                                 FITNESSPOINTS_TABLE,
@@ -84,7 +85,35 @@ namespace kcar.interfaces.Reader
                                 jarray.Add(jobj);
                             }
 
-                            o.Add("FitnessActivityPoints", jarray);
+                            var jsorted = new JArray(jarray.OrderBy(obj => (int)obj["ActivityTimestamp"]) );
+
+                            // Get HR data
+                            var clientHR = new TableClient(
+                                new Uri(STORAGE_URI),
+                                HEARTRATES_TABLE,
+                                new TableSharedKeyCredential(STORAGE_ACCOUNT, Settings.Instance.Caledos.TableStorageAccessKey));
+
+                            Pageable<TableEntity> queryResultsFilterHR = clientHR.Query<TableEntity>(filter: $"PartitionKey eq '{fitnessActivityId}'");
+
+                            var jarrayHR = new JArray();
+                            foreach (TableEntity qEntity in queryResultsFilterHR)
+                            {
+                                var jobj = new JObject();
+                                
+                                foreach (var prop in qEntity.AsEnumerable())
+                                {
+                                    jobj.Add(prop.Key, prop.Value.ToString());
+                                }
+                                
+                                jarrayHR.Add(jobj);
+                            }
+
+                            var jsortedHR = new JArray(jarrayHR.OrderBy(obj => (int)obj["ActivityTimestamp"]) );
+
+
+
+                            o.Add("FitnessActitivyPoints", jsorted);
+                            o.Add("HRPoints", jsortedHR);
 
     	                    string s = o.ToString();
                             Log.Verbose($"{o}");

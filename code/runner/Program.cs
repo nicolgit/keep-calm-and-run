@@ -35,7 +35,11 @@ namespace kcar.runner
             var cReader = new CaledosReader();
             cReader.Initialize(model.Settings.Instance);
 
-            var res = cReader.ReadActivity("65b98a0a-3aac-42d3-a6b5-000007d06a9a");
+            //GPS
+            //var res = cReader.ReadActivity("65b98a0a-3aac-42d3-a6b5-000007d06a9a");
+
+            // HR
+            var res = cReader.ReadActivity("69ba14ec-99e5-469c-b5da-7cbbec4e1075");
 
             var a = model.Settings.Instance;
             Log.Information($"config sample field:{a.Sample}");
