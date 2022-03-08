@@ -1,4 +1,3 @@
-using kcar.interfaces.Reader;
 using kcar.model;
 using System;
 using System.Data.SqlClient;
@@ -8,11 +7,16 @@ using Newtonsoft.Json.Linq;
 using Azure.Data.Tables;
 using Azure;
 using Newtonsoft.Json;
+using kcar.model.interfaces;
+using kcar.model.activity;
 
 namespace kcar.interfaces.Reader
 {
     public class CaledosReader : IReader
     {
+        private readonly string READER_TYPE="Caledos";
+        private readonly int READER_VERSION=1;
+
         private readonly string STORAGE_URI = "https://caledosblobproduction.table.core.windows.net";
         private readonly string FITNESSPOINTS_TABLE = "FitnessActivityPoints";
         private readonly string HEARTRATES_TABLE = "HeartActivityPoints";
@@ -38,7 +42,7 @@ namespace kcar.interfaces.Reader
             throw new NotImplementedException();
         }
 
-        public string ReadActivity(string id)
+        public IActivity ReadActivity(string id)
         {            
             using (SqlConnection connection = new SqlConnection( _settings!.DBConnectionString))
             {              
@@ -119,12 +123,14 @@ namespace kcar.interfaces.Reader
                             Log.Verbose($"{o}");
                             Log.Verbose($"The query returned {queryResultsFilter.Count()} entities.");
 
-                            return result;
+                            var caledosActivity = new CaledosActivity(READER_TYPE, READER_VERSION, s);
+                            return caledosActivity;
                         }
                     }
                 }                    
             }
             throw new kcarNotFoudException($"Activity {id} not found");
         }
+        
     }
 }
