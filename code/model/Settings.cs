@@ -4,6 +4,12 @@ namespace kcar.model
 {
     public sealed class Settings
     {
+        public Settings()
+        {
+            Sample = "";
+            Caledos = new Caledos();
+        }
+
         private static Settings instance = new Settings();
 
         static public void Load(IConfiguration config, string key)
@@ -26,6 +32,13 @@ namespace kcar.model
 
     public class Caledos
     {
+        public Caledos()
+        {
+            DBConnectionString = "";
+            TableStorageAccessKey = "";
+            Username = "";
+            Password = "";
+        }
         public string DBConnectionString { get; set; }
         public string TableStorageAccessKey { get; set; }
         public string Username { get; set; }

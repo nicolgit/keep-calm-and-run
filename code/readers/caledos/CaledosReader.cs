@@ -28,7 +28,7 @@ namespace kcar.interfaces.Reader
             _settings = settings.Caledos;
             if (_settings == null)
             {
-                throw new kcarSettingsNotFoundException("Caledos settings not found");
+                throw new kcarSettingsNotFoundException("CaledosReader.Initialize: Caledos settings not found");
             }
         }
 
@@ -37,9 +37,65 @@ namespace kcar.interfaces.Reader
             throw new NotImplementedException();
         }
 
-        public string ReadActivities(DateTime before, DateTime after, int page, int pageSize)
+        public IEnumerable<IActivity> ReadActivities(DateTime? before, DateTime? after, int page, int pageSize)
         {
-            throw new NotImplementedException();
+            if (before != null && after != null)
+            {
+                throw new kcarParametersException("CaledosReader.ReadActivities: before and after parameters are not supported together");
+            }
+
+            var userid = getUserId();
+
+            
+            using (SqlConnection connection = new SqlConnection( _settings!.DBConnectionString))
+            {
+                connection.Open();
+
+                string sql = $"select * from FitnessActivity where FitnessActivity.UserId = CONVERT(uniqueidentifier, '{userid.ToString()}' ) ";
+
+                if (before != null)
+                {
+                    //  dateValue.ToString("MM/dd/yyyy hh:mm:ss.fff tt"));
+                    // '20081220 00:00:00.000'
+                    sql += $"and FitnessActivity.LastModifiedDateTime >= '{before.Value.ToString("yyyyMMdd hh:mm:ss.fff")}' ";
+                }
+                else if (after != null)
+                {
+                    sql += $"and FitnessActivity.LastModifiedDateTime < '{after.Value.ToString("yyyyMMdd hh:mm:ss.fff")}' ";
+                }
+
+                sql +=  "order by FitnessActivity.LastModifiedDateTime ";
+                sql += $"OFFSET {page*pageSize} ROWS FETCH NEXT {pageSize} ROWS ONLY ";
+                sql +=  "FOR JSON AUTO";
+
+                using (SqlCommand command = new SqlCommand(sql, connection))
+                {
+                    using (SqlDataReader reader = command.ExecuteReader())
+                    {
+                        string result ="";
+
+                        while (reader.Read())
+                        {
+                            result += reader.GetString(0);                           
+                        }
+                        Log.Verbose($"Result Data: {result}");
+
+                        if (result.Length > 0)
+                            {
+                                JArray ja = JArray.Parse(result);
+
+                                var output = new List<IActivity>();
+                                foreach (var i in ja)
+                                {
+                                    output.Add(new CaledosActivity( READER_TYPE, READER_VERSION, i.ToString()));
+                                }
+                                return output;
+                            }
+                    }
+                }
+            }
+            
+            return new List<IActivity>();
         }
 
         public IActivity ReadActivity(string id)
@@ -62,7 +118,7 @@ namespace kcar.interfaces.Reader
                             Log.Verbose($"Activity Data: {result}");
 
                             JObject o = JObject.Parse(result);
-                            var fitnessActivityId = ((string)o.SelectToken("Id")).ToLower().Replace("-", "");
+                            var fitnessActivityId = ((string)o.SelectToken("Id")!).ToLower().Replace("-", "");
                             var userId = (string?)o.SelectToken("UserId");
                             
                             Log.Verbose($"Activity: {fitnessActivityId}");
@@ -89,7 +145,7 @@ namespace kcar.interfaces.Reader
                                 jarray.Add(jobj);
                             }
 
-                            var jsorted = new JArray(jarray.OrderBy(obj => (int)obj["ActivityTimestamp"]) );
+                            var jsorted = new JArray(jarray.OrderBy(obj => (int)obj["ActivityTimestamp"]!) );
 
                             // Get HR data
                             var clientHR = new TableClient(
@@ -112,8 +168,7 @@ namespace kcar.interfaces.Reader
                                 jarrayHR.Add(jobj);
                             }
 
-                            var jsortedHR = new JArray(jarrayHR.OrderBy(obj => (int)obj["ActivityTimestamp"]) );
-
+                            var jsortedHR = new JArray(jarrayHR.OrderBy(obj => (int)obj["ActivityTimestamp"]!) );
 
 
                             o.Add("FitnessActitivyPoints", jsorted);
@@ -129,8 +184,29 @@ namespace kcar.interfaces.Reader
                     }
                 }                    
             }
-            throw new kcarNotFoudException($"Activity {id} not found");
+            throw new kcarNotFoundException($"CaledosReader.ReadActivity: Activity {id} not found");
         }
-        
+
+        private Guid getUserId()
+        {
+            using (SqlConnection connection = new SqlConnection( _settings!.DBConnectionString))
+                {
+                    connection.Open();
+                    string selectUser =$"select Id from [User] where dbo.[User].Email = '{_settings.Username}'";
+
+                    using (SqlCommand command = new SqlCommand(selectUser, connection))
+                    {
+                        using (SqlDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                var result = reader.GetGuid(0);
+                                return result;
+                            }
+                        }
+                    }
+                }
+            throw new kcarNotFoundException($"CaledosReader.getUserId: User {_settings.Username} not found");
+        }
     }
 }

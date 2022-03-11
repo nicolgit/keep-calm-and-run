@@ -2,16 +2,30 @@ using System;
 
 namespace kcar.model
 {
-    public class kcarSettingsNotFoundException : Exception
+    public class kcarBase : Exception
+    {
+        public kcarBase(string message) : base(message)
+        {
+        }
+    }
+
+    public class kcarSettingsNotFoundException : kcarBase
     {
         public kcarSettingsNotFoundException(string message) : base(message)
         {
         }
     }
 
-    public class kcarNotFoudException : Exception
+    public class kcarNotFoundException : kcarBase
     {
-        public kcarNotFoudException(string message) : base(message)
+        public kcarNotFoundException(string message) : base(message)
+        {
+        }
+    }
+
+    public class kcarParametersException : kcarBase
+    {
+        public kcarParametersException(string message) : base(message)
         {
         }
     }
