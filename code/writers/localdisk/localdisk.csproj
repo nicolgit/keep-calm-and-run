@@ -7,7 +7,7 @@
   <RootNamespace>kcar.writers.caledos</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include = "..\..\interfaces\interfaces.csproj" />
+    <ProjectReference Include = "..\..\model\model.csproj" />
   </ItemGroup>
 
 </Project>
