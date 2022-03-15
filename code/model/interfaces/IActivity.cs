@@ -14,6 +14,8 @@ namespace kcar.interfaces
        public float Duration { get;  } 
        public float Calories { get; }
        public float Distance { get; }
+
+       public string ToShortString ();
    }
 }
 

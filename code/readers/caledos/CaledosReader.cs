@@ -78,6 +78,7 @@ namespace kcar.interfaces.Reader
                         {
                             result += reader.GetString(0);                           
                         }
+                        
                         Log.Verbose($"Result Data: {result}");
 
                         if (result.Length > 0)

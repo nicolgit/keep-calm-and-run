@@ -1,8 +1,9 @@
 using Newtonsoft.Json.Linq;
+using System;
 
 namespace kcar.model.activity
 {
-    public class ActivityBase
+    public abstract class ActivityBase
     {
         public ActivityBase(string p, int pv,string ad)
         {
@@ -18,5 +19,10 @@ namespace kcar.model.activity
         public string ActivityData { get; set; }
 
         protected JObject jActivityData {get; set;}
+
+        abstract public string Type { get; }
+        abstract public DateTime StartDate { get; }
+
+        public string ToShortString() => $"{Type} - {StartDate}";
     }
 }

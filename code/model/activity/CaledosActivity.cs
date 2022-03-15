@@ -47,11 +47,11 @@ namespace kcar.model.activity
         }
         
         public string Id { get =>  jActivityData.SelectToken("Id")!.ToString();}
-        public DateTime StartDate { get => jActivityData.SelectToken("StartDate")!.ToObject<DateTime>();} 
+        override public DateTime StartDate { get => jActivityData.SelectToken("StartDate")!.ToObject<DateTime>();} 
         public float Duration { get => jActivityData.SelectToken("TotalSeconds")!.ToObject<float>();} 
         public float Calories { get => jActivityData.SelectToken("TotalCalories")!.ToObject<float>();} 
         public float Distance { get => jActivityData.SelectToken("TotalDistance")!.ToObject<float>();}
-        public string Type { get => types.Where(a => a.Item1 == jActivityData.SelectToken("FitnessActivityTypeId")!.ToObject<int>() ).FirstOrDefault().Item2; }
+        override public string Type { get => types.Where(a => a.Item1 == jActivityData.SelectToken("FitnessActivityTypeId")!.ToObject<int>() ).FirstOrDefault().Item2; }
 
         private const string TYPE_RUNNING = "Running";
         private const string TYPE_CYCLING = "Cycling";
