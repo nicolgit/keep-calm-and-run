@@ -6,11 +6,11 @@ using Serilog;
 using Newtonsoft.Json.Linq;
 using Azure.Data.Tables;
 using Azure;
-using Newtonsoft.Json;
 using kcar.model.interfaces;
 using kcar.model.activity;
+using kcar.interfaces;
 
-namespace kcar.interfaces.Reader
+namespace kcar.Reader
 {
     public class CaledosReader : IReader
     {
@@ -23,21 +23,18 @@ namespace kcar.interfaces.Reader
         private readonly string STORAGE_ACCOUNT = "caledosblobproduction";
         private model.Caledos? _settings;
 
-        public void Initialize(Settings settings)
+        public async Task Initialize(Settings settings)
         {
             _settings = settings.Caledos;
             if (_settings == null)
             {
                 throw new kcarSettingsNotFoundException("CaledosReader.Initialize: Caledos settings not found");
             }
+
+            await Task.Yield();
         }
 
-        public int Count()
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerable<IActivity> ReadActivities(DateTime? before, DateTime? after, int page, int pageSize)
+        public async Task<IEnumerable<IActivity>> ReadActivities(DateTime? before, DateTime? after, int skip, int pageSize)
         {
             if (before != null && after != null)
             {
@@ -65,7 +62,7 @@ namespace kcar.interfaces.Reader
                 }
 
                 sql +=  "order by FitnessActivity.LastModifiedDateTime ";
-                sql += $"OFFSET {page*pageSize} ROWS FETCH NEXT {pageSize} ROWS ONLY ";
+                sql += $"OFFSET {skip} ROWS FETCH NEXT {pageSize} ROWS ONLY ";
                 sql +=  "FOR JSON AUTO";
 
                 using (SqlCommand command = new SqlCommand(sql, connection))
@@ -74,7 +71,7 @@ namespace kcar.interfaces.Reader
                     {
                         string result ="";
 
-                        while (reader.Read())
+                        while (await reader.ReadAsync())
                         {
                             result += reader.GetString(0);                           
                         }
@@ -99,7 +96,7 @@ namespace kcar.interfaces.Reader
             return new List<IActivity>();
         }
 
-        public IActivity ReadActivity(string id)
+        public async Task<IActivity> ReadActivity(string id)
         {            
             using (SqlConnection connection = new SqlConnection( _settings!.DBConnectionString))
             {              
@@ -111,7 +108,7 @@ namespace kcar.interfaces.Reader
                 {
                     using (SqlDataReader reader = command.ExecuteReader())
                     {
-                        while (reader.Read())
+                        while (await reader.ReadAsync())
                         {
                             var result = reader.GetString(0);
                             result = result.Substring(1, result.Length - 2);
@@ -146,8 +143,7 @@ namespace kcar.interfaces.Reader
                                 jarray.Add(jobj);
                             }
 
-                            var jsorted = new JArray(jarray.OrderBy(obj => (int)obj["ActivityTimestamp"]!) );
-
+                            var jsorted = new JArray(jarray.OrderBy(obj => parseDouble(obj["ActivityTimestamp"],0)));
                             // Get HR data
                             var clientHR = new TableClient(
                                 new Uri(STORAGE_URI),
@@ -169,7 +165,7 @@ namespace kcar.interfaces.Reader
                                 jarrayHR.Add(jobj);
                             }
 
-                            var jsortedHR = new JArray(jarrayHR.OrderBy(obj => (int)obj["ActivityTimestamp"]!) );
+                            var jsortedHR = new JArray(jarrayHR.OrderBy(obj => parseDouble(obj["ActivityTimestamp"],0)));
 
 
                             o.Add("FitnessActitivyPoints", jsorted);
@@ -188,6 +184,24 @@ namespace kcar.interfaces.Reader
             throw new kcarNotFoundException($"CaledosReader.ReadActivity: Activity {id} not found");
         }
 
+        private double parseDouble(JToken? s, double defaultValue)
+        {
+            if (s == null)
+            {
+                return defaultValue;
+            }
+            
+            double result;
+            var isParsable = double.TryParse(s.ToString(), out result);   
+            if (!isParsable)
+            {              
+                return defaultValue;
+            }
+            else
+            {
+                return result;
+            }
+        }
         private Guid getUserId()
         {
             using (SqlConnection connection = new SqlConnection( _settings!.DBConnectionString))

@@ -1,8 +1,11 @@
+using System.Threading.Tasks;
+using kcar.model;
+
 namespace kcar.interfaces
 {
     public interface IWriter
     {
-        public bool Initialize();
-        public string WriteActivity(IActivity activity);
+        public Task Initialize(Settings settings);
+        public Task WriteActivity(IActivity activity);
     }
 }

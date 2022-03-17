@@ -16,6 +16,7 @@ namespace kcar.interfaces
        public float Distance { get; }
 
        public string ToShortString ();
+       public string ToJsonString ();
    }
 }
 
